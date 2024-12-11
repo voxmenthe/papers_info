@@ -135,4 +135,40 @@ These four papers represent significant advancements in MoE research, each with 
 *   For general language modeling tasks where maximizing performance is the primary goal, **BAM** provides a strong alternative.
 *   For research focused on interpretability, knowledge manipulation, and safety, **MONET** presents a novel and promising approach.
 
-As the field of MoE research continues to evolve, we can expect further innovations that build upon these ideas and address the remaining challenges, leading to even more powerful, efficient, and interpretable language models.
+
+
+## MoEUT Implemenation
+
+**Explanation and Key Improvements:**
+
+1. **SigmaMoE Layer:**
+    *   The `SigmaMoE` class implements the core MoE layer.
+    *   It uses a set of `n_experts` experts, each being a simple 2-layer MLP.
+    *   `expert_sel` computes scores for each expert based on the input.
+    *   `F.sigmoid` is used as the gating activation (non-competitive).
+    *   `topk` selects the top `n_heads` experts.
+    *   Expert outputs are computed and weighted by their corresponding scores.
+    *   `entropy_reg` is calculated for regularization.
+
+2. **MoEUT Model:**
+    *   The `MoEUT` class stacks multiple layers, each containing a `SigmaMoE` layer and a standard MultiHeadAttention layer.
+    *   Uses `group_size` to repeat the recurrent block multiple times.
+    *   Applies layer normalization and dropout.
+    *   Accumulates regularization loss from each `SigmaMoE` layer.
+
+3. **MoEUTLM Model:**
+    *   The `MoEUTLM` class adds an embedding layer and a linear layer (lm_head) on top of the `MoEUT` model for language modeling.
+
+4. **Key improvements of this implementation:**
+    *   **Parameter Matching:** The code is structured to facilitate parameter-matched comparisons, which is crucial for evaluating MoEs fairly.
+    *   **Simplified Regularization:** Uses a simple entropy regularization term instead of complex load-balancing mechanisms.
+    *   **Expert Dropout:** Implements expert dropout, which helps with regularization and prevents expert collapse.
+    *   **No specialized kernels:** Uses only standard PyTorch operations, making it easy to understand and modify.
+    *   **Clear Docstrings and Comments:** The code is extensively commented to explain the purpose of each part and its relation to the paper.
+    *   **Initialization:** Parameters are initialized according to the methods described in the paper, including the special handling of `expert_sel` weights.
+    *   **Flexibility:** The code allows for easy experimentation with different hyperparameters and configurations.
+    
+5. **Other Considerations:**
+   * This implementation doesn't include the ACT mechanism for dynamic halting from the original paper. However, it can be added on top of the existing architecture if needed.
+   * The `AttentionMask` is a placeholder for compatibility with SwitchHead but isn't used in this MoEUT implementation.
+   * This code is meant to be a clear and straightforward implementation of the core MoEUT concepts, prioritizing readability and understanding over maximum optimization.
